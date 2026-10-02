@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes & To-Do</title>
+<!-- Your notes live inside this block. The page rewrites it every time you save. -->
+<script id="notes-data" type="application/json">null</script>
+<style>
+  /* ---------- Themes ---------- */
+  :root, [data-theme="pitch"] {
+    --bg: #000; --panel: #0a0a0a; --card: #0d0d0d; --hover: #151515;
+    --line: #222; --line-hi: #3a3a3a;
+    --text: #fff; --body: #e6e6e6; --dim: #8a8a8a; --faint: #555;
+    --accent: #fff; --accent-ink: #000; --danger: #ff5a5a;
+  }
+  [data-theme="jade"] {
+    --bg: #000; --panel: #030a07; --card: #04100b; --hover: #072017;
+    --line: #0f2e21; --line-hi: #1d5a40;
+    --text: #3ee6a0; --body: #7cf0c0; --dim: #2a9a6b; --faint: #1b6648;
+    --accent: #00c47d; --accent-ink: #000; --danger: #ff6b6b;
+  }
+  [data-theme="jade-black"] {
+    --bg: #03110b; --panel: #061a11; --card: #082217; --hover: #0c2e20;
+    --line: #12392a; --line-hi: #1f5c43;
+    --text: #effff7; --body: #d2f2e3; --dim: #74b597; --faint: #3f7a60;
+    --accent: #00a86b; --accent-ink: #fff; --danger: #ff6b6b;
+  }
+  [data-theme="paper"] {
+    --bg: #ffffff; --panel: #f6f6f4; --card: #ffffff; --hover: #ececea;
+    --line: #e2e2e0; --line-hi: #bdbdbb;
+    --text: #111; --body: #222; --dim: #666; --faint: #9a9a9a;
+    --accent: #111; --accent-ink: #fff; --danger: #d42b2b;
+  }
+  [data-theme="amber"] {
+    --bg: #0a0700; --panel: #110c02; --card: #140e03; --hover: #1f1605;
+    --line: #2e2208; --line-hi: #5a4310;
+    --text: #ffb627; --body: #ffcb66; --dim: #b07e1c; --faint: #6e4f12;
+    --accent: #ffb627; --accent-ink: #000; --danger: #ff5a3c;
+  }
+  [data-theme="midnight"] {
+    --bg: #0a0f1e; --panel: #0d1428; --card: #111a33; --hover: #18233f;
+    --line: #1e2a4a; --line-hi: #34477a;
+    --text: #e3eaff; --body: #c8d4f5; --dim: #7c8cb8; --faint: #4d5d88;
+    --accent: #7aa2ff; --accent-ink: #0a0f1e; --danger: #ff6b81;
+  }
+  [data-theme="violet"] {
+    --bg: #110d1a; --panel: #161122; --card: #1b152a; --hover: #241c38;
+    --line: #2c2342; --line-hi: #4b3b72;
+    --text: #f3ecff; --body: #ddd0f7; --dim: #9a88c2; --faint: #66598a;
+    --accent: #c39bff; --accent-ink: #110d1a; --danger: #ff6e9c;
+  }
+  [data-theme="sepia"] {
+    --bg: #f3ead7; --panel: #ece1c9; --card: #f8f1e1; --hover: #e4d7bb;
+    --line: #dccdaf; --line-hi: #b9a581;
+    --text: #3a2c1a; --body: #4a3a25; --dim: #806a4c; --faint: #a8916f;
+    --accent: #5a3e1f; --accent-ink: #f8f1e1; --danger: #b83a2a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Courier New", Courier, monospace; font-size: 15px; line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  button, input, textarea { font: inherit; color: inherit; }
+  input, textarea { background: transparent; border: none; outline: none; }
+  ::placeholder { color: var(--faint); }
+
+  .app { display: grid; grid-template-columns: 270px 1fr; height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  aside {
+    border-right: 1px solid var(--line); background: var(--panel);
+    display: flex; flex-direction: column; padding: 28px 18px 18px; overflow-y: auto;
+  }
+  .brand { font-size: 18px; font-weight: bold; letter-spacing: 2px; margin: 0 0 4px 6px; }
+  .brand-sub { color: var(--dim); font-size: 12px; margin: 0 0 28px 6px; }
+  .label { color: var(--dim); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin: 0 0 10px 6px; }
+  .sections { list-style: none; margin: 0 0 14px; padding: 0; }
+  .sections li {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 9px 10px; margin-bottom: 4px; border: 1px solid transparent; border-radius: 6px;
+    cursor: pointer; color: var(--dim); transition: background .12s, color .12s;
+  }
+  .sections li:hover { background: var(--hover); color: var(--text); }
+  .sections li.active { border-color: var(--line-hi); background: var(--hover); color: var(--text); }
+  .sections li .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sections li .count { font-size: 12px; color: var(--faint); }
+  .add-section { margin-bottom: 28px; }
+  .add-section input { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  .add-section input:focus { border-color: var(--line-hi); }
+
+  .themes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 8px; }
+  .swatch {
+    aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 2px solid var(--line);
+    display: grid; place-items: center; font-size: 13px; font-weight: bold; padding: 0;
+    transition: transform .1s, border-color .12s;
+  }
+  .swatch:hover { transform: scale(1.06); }
+  .swatch.active { border-color: var(--accent); }
+  .theme-name { font-size: 12px; color: var(--dim); margin: 0 6px 24px; min-height: 1.2em; }
+
+  .side-foot { margin-top: auto; display: grid; gap: 8px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .side-foot .hint { font-size: 11px; color: var(--faint); margin: 4px 6px 0; line-height: 1.5; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    background: transparent; border: 1px solid var(--line-hi); border-radius: 6px;
+    padding: 8px 14px; cursor: pointer; white-space: nowrap;
+    transition: background .12s, color .12s, border-color .12s, opacity .12s;
+  }
+  .btn:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.solid { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.solid:hover { opacity: .85; }
+  .btn.small { padding: 4px 10px; font-size: 13px; }
+  .btn.danger:hover { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--faint);
+    padding: 2px 6px; border-radius: 4px; font-size: 14px; line-height: 1;
+  }
+  .icon-btn:hover { color: var(--text); background: var(--hover); }
+  .icon-btn.confirm { color: var(--danger); }
+
+  /* ---------- Main ---------- */
+  main { overflow-y: auto; padding: 40px 48px 80px; }
+  .banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+    border: 1px dashed var(--line-hi); border-radius: 10px; padding: 14px 18px; margin-bottom: 32px;
+    color: var(--body); font-size: 14px;
+  }
+  .banner b { color: var(--text); }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+  .section-title {
+    font-size: 28px; font-weight: bold; letter-spacing: 1px; flex: 1; min-width: 200px;
+    padding: 4px 0; border-bottom: 1px dashed transparent;
+  }
+  .section-title:focus { border-bottom-color: var(--line-hi); }
+  .meta { color: var(--dim); font-size: 13px; margin-bottom: 28px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .status { color: var(--faint); transition: color .3s; }
+  .status.ok { color: var(--dim); }
+  .status.flash { color: var(--text); }
+  .status.warn { color: var(--danger); }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 32px; }
+  .search { flex: 1; min-width: 180px; max-width: 360px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; }
+  .search:focus { border-color: var(--line-hi); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; align-items: start; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px 22px 18px; transition: border-color .15s; }
+  .card:hover, .card:focus-within { border-color: var(--line-hi); }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .tag {
+    font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; border: 1px solid var(--line-hi);
+    color: var(--dim); padding: 1px 7px; border-radius: 4px; flex-shrink: 0;
+  }
+  .card-title { flex: 1; min-width: 0; font-weight: bold; font-size: 17px; }
+  .card-actions { display: flex; gap: 2px; opacity: .5; transition: opacity .15s; }
+  .card:hover .card-actions, .card:focus-within .card-actions { opacity: 1; }
+  .card textarea { width: 100%; resize: none; min-height: 90px; overflow: hidden; color: var(--body); line-height: 1.7; }
+  .card-foot { margin-top: 12px; font-size: 11px; color: var(--faint); display: flex; justify-content: space-between; }
+
+  .progress { height: 2px; background: var(--line); border-radius: 2px; margin: 0 0 14px; overflow: hidden; }
+  .progress > div { height: 100%; background: var(--accent); transition: width .25s; }
+  .todos { list-style: none; margin: 0; padding: 0; }
+  .todos li { display: flex; align-items: flex-start; gap: 10px; padding: 5px 0; }
+  .todos li .icon-btn { opacity: 0; margin-top: 2px; }
+  .todos li:hover .icon-btn { opacity: 1; }
+  .check {
+    appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 16px; height: 16px; margin-top: 4px;
+    border: 1px solid var(--dim); border-radius: 3px; cursor: pointer; display: grid; place-items: center;
+  }
+  .check:checked { background: var(--accent); border-color: var(--accent); }
+  .check:checked::after { content: "✓"; color: var(--accent-ink); font-size: 12px; font-weight: bold; line-height: 1; }
+  .todos input.text { flex: 1; min-width: 0; padding: 0; color: var(--body); }
+  .todos li.done input.text { text-decoration: line-through; color: var(--faint); }
+  .add-todo { display: flex; gap: 10px; align-items: center; padding-top: 8px; margin-top: 6px; border-top: 1px dashed var(--line); }
+  .add-todo span { color: var(--faint); width: 16px; text-align: center; }
+  .add-todo input { flex: 1; min-width: 0; padding: 4px 0; }
+
+  .empty { text-align: center; color: var(--dim); padding: 80px 20px; border: 1px dashed var(--line); border-radius: 10px; }
+  .empty p { margin: 0 0 18px; }
+  .menu-btn { display: none; }
+
+  @media (max-width: 760px) {
+    .app { grid-template-columns: 1fr; }
+    aside { position: fixed; inset: 0 20% 0 0; z-index: 10; transform: translateX(-105%); transition: transform .2s; }
+    aside.open { transform: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.6); }
+    main { padding: 24px 18px 60px; }
+    .menu-btn { display: inline-block; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar">
+    <div class="brand">NOTES_</div>
+    <div class="brand-sub">notes &amp; to-dos, saved in this file.</div>
+
+    <div class="label">Sections</div>
+    <ul class="sections" id="sectionList"></ul>
+    <form class="add-section" id="addSectionForm">
+      <input id="newSectionInput" placeholder="+ new section" maxlength="40">
+    </form>
+
+    <div class="label">Theme</div>
+    <div class="themes" id="themes"></div>
+    <div class="theme-name" id="themeName"></div>
+
+    <div class="side-foot">
+      <button class="btn small" id="linkBtn">Link this file</button>
+      <button class="btn small" id="downloadBtn">Download copy (with notes)</button>
+      <button class="btn small" id="blankBtn">Download blank copy</button>
+      <p class="hint">Send the blank copy to colleagues so they can start their own notes.</p>
+    </div>
+  </aside>
+
+  <main>
+    <div class="banner" id="banner" hidden>
+      <span id="bannerText"></span>
+      <button class="btn small solid" id="bannerBtn"></button>
+    </div>
+
+    <div class="topbar">
+      <button class="btn small menu-btn" id="menuBtn">☰ Sections</button>
+      <input class="section-title" id="sectionTitle" placeholder="Section name" maxlength="40">
+      <button class="btn small danger" id="deleteSectionBtn">Delete section</button>
+    </div>
+    <div class="meta">
+      <span id="sectionStats"></span>
+      <span class="status" id="status"></span>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn solid" id="addNoteBtn">+ Note</button>
+      <button class="btn solid" id="addTodoBtn">+ To-do list</button>
+      <input class="search" id="search" placeholder="search this section…">
+    </div>
+
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script>
+(function () {
+  // Snapshot of the untouched page, used to build downloadable copies.
+  const TEMPLATE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const DATA_OPEN = '<script id="notes-data" type="application/json">';
+  const DATA_CLOSE = "</" + "script>";
+
+  const THEMES = [
+    { id: "pitch",      name: "Pitch Black", bg: "#000",    fg: "#fff" },
+    { id: "jade",       name: "Jade Green",  bg: "#000",    fg: "#3ee6a0" },
+    { id: "jade-black", name: "Jade Black",  bg: "#03110b", fg: "#00a86b" },
+    { id: "paper",      name: "White",       bg: "#fff",    fg: "#111" },
+    { id: "amber",      name: "Amber",       bg: "#0a0700", fg: "#ffb627" },
+    { id: "midnight",   name: "Midnight",    bg: "#0a0f1e", fg: "#7aa2ff" },
+    { id: "violet",     name: "Violet",      bg: "#110d1a", fg: "#c39bff" },
+    { id: "sepia",      name: "Sepia",       bg: "#f3ead7", fg: "#5a3e1f" }
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const fsSupported = "showOpenFilePicker" in window;
+
+  // ---------- State (read from the data block inside this file) ----------
+  function defaultState() {
+    const s1 = uid(), s2 = uid();
+    return {
+      theme: "pitch", active: s1,
+      sections: [
+        { id: s1, name: "Work", items: [
+          { id: uid(), type: "todo", title: "Today", updated: Date.now(), todos: [
+            { id: uid(), text: "Check emails", done: true },
+            { id: uid(), text: "Team sync at 11:00", done: false },
+            { id: uid(), text: "Finish the report", done: false }
+          ]},
+          { id: uid(), type: "note", title: "Welcome", updated: Date.now(),
+            body: "Click anywhere to edit.\nLink this file once (button on the left) and\nevery change is written straight into notes.html." }
+        ]},
+        { id: s2, name: "Personal", items: [] }
+      ]
+    };
+  }
+
+  let state = null;
+  try { state = JSON.parse($("notes-data").textContent); } catch (e) {}
+  if (!state) {
+    // One-time carry-over from the earlier browser-storage version, if present.
+    try { state = JSON.parse(localStorage.getItem("courier-notes-v1")); } catch (e) {}
+  }
+  if (!state || !Array.isArray(state.sections) || !state.sections.length) state = defaultState();
+  if (!state.theme) state.theme = "pitch";
+
+  // ---------- Saving into the file ----------
+  let fileHandle = null;   // handle to this very notes.html
+  let dirty = false, saveTimer = null, writing = Promise.resolve(), flashTimer;
+
+  function setStatus(text, cls) {
+    const el = $("status");
+    el.textContent = text; el.className = "status " + (cls || "");
+  }
+
+  function serialize(data) {
+    return data === null ? "null" : JSON.stringify(data).replace(/</g, "\\u003c");
+  }
+  function withData(html, data) {
+    const start = html.indexOf(DATA_OPEN);
+    if (start < 0) throw new Error("data block missing");
+    const from = start + DATA_OPEN.length;
+    const end = html.indexOf(DATA_CLOSE, from);
+    return html.slice(0, from) + serialize(data) + html.slice(end);
+  }
+
+  function changed() {
+    dirty = true;
+    if (!fileHandle) { setStatus("○ unsaved — link the file to save", "warn"); return; }
+    setStatus("… saving");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(writeFile, 500);
+  }
+
+  function writeFile() {
+    if (!fileHandle) return;
+    const snapshot = JSON.parse(JSON.stringify(state));
+    writing = writing.then(async () => {
+      try {
+        const source = await (await fileHandle.getFile()).text();
+        const out = withData(source, snapshot);
+        const w = await fileHandle.createWritable();
+        await w.write(out); await w.close();
+        dirty = false;
+        setStatus("● saved to " + fileHandle.name, "ok flash");
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => $("status").classList.remove("flash"), 700);
+      } catch (e) {
+        setStatus("⚠ could not write the file — click Link this file again", "warn");
+        fileHandle = null; updateBanner();
+      }
+    });
+    return writing;
+  }
+
+  // Remember which file this page is linked to (only the file handle is kept, not your notes).
+  const idb = {
+    db: () => new Promise((res, rej) => {
+      const r = indexedDB.open("notes-file-link", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("handles");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }),
+    async get(k) { const db = await this.db(); return new Promise(res => { const r = db.transaction("handles").objectStore("handles").get(k); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }); },
+    async set(k, v) { const db = await this.db(); return new Promise(res => { const t = db.transaction("handles", "readwrite"); t.objectStore("handles").put(v, k); t.oncomplete = res; t.onerror = res; }); }
+  };
+  const linkKey = decodeURIComponent(location.pathname);
+  const thisFileName = linkKey.split(/[\\/]/).pop();
+  let pendingHandle = null; // remembered handle still waiting for permission
+
+  async function linkFile() {
+    if (pendingHandle) {
+      const p = await pendingHandle.requestPermission({ mode: "readwrite" });
+      if (p === "granted") { fileHandle = pendingHandle; pendingHandle = null; afterLink(); return; }
+    }
+    let handle;
+    try {
+      [handle] = await window.showOpenFilePicker({
+        types: [{ description: "This notes file", accept: { "text/html": [".html", ".htm"] } }]
+      });
+    } catch (e) { return; } // picker cancelled
+    const text = await (await handle.getFile()).text();
+    if (!text.includes(DATA_OPEN)) {
+      setStatus("⚠ that is not a notes file — pick " + thisFileName, "warn"); return;
+    }
+    if ((await handle.requestPermission({ mode: "readwrite" })) !== "granted") return;
+    fileHandle = handle;
+    try { await idb.set(linkKey, handle); } catch (e) {}
+    afterLink();
+  }
+  function afterLink() {
+    updateBanner();
+    dirty = true; writeFile();
+  }
+
+  async function restoreLink() {
+    if (!fsSupported) return;
+    try {
+      const h = await idb.get(linkKey);
+      if (!h) return;
+      const p = await h.queryPermission({ mode: "readwrite" });
+      if (p === "granted") fileHandle = h; else pendingHandle = h;
+    } catch (e) {}
+  }
+
+  function updateBanner() {
+    const b = $("banner");
+    $("linkBtn").textContent = fileHandle ? "Linked ✓ " + fileHandle.name : "Link this file";
+    if (fileHandle) { b.hidden = true; if (!dirty) setStatus("● saved to " + fileHandle.name, "ok"); return; }
+    b.hidden = false;
+    if (!fsSupported) {
+      $("bannerText").innerHTML = "This browser can't write to files. <b>Open in Chrome or Edge</b> for auto-save, or use <b>Download copy</b> to save.";
+      $("bannerBtn").textContent = "Download copy";
+    } else if (pendingHandle) {
+      $("bannerText").innerHTML = "Click once to <b>resume auto-save</b> into " + esc(pendingHandle.name) + ".";
+      $("bannerBtn").textContent = "Resume saving";
+    } else {
+      $("bannerText").innerHTML = "<b>One-time setup:</b> link this file so every change saves into <b>" + esc(thisFileName) + "</b> itself.";
+      $("bannerBtn").textContent = "Link this file";
+    }
+    if (!dirty) setStatus("○ not linked yet");
+  }
+
+  function download(name, html) {
+    const blob = new Blob([html], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  const downloadCopy = () => { download(thisFileName || "notes.html", withData(TEMPLATE, state)); dirty = false; if (!fileHandle) setStatus("↓ copy downloaded"); };
+
+  $("linkBtn").onclick = () => fsSupported ? linkFile() : downloadCopy();
+  $("bannerBtn").onclick = () => fsSupported ? linkFile() : downloadCopy();
+  $("downloadBtn").onclick = downloadCopy;
+  $("blankBtn").onclick = () => download("notes.html", withData(TEMPLATE, null));
+
+  window.addEventListener("beforeunload", (e) => {
+    if (dirty) { if (fileHandle) writeFile(); e.preventDefault(); e.returnValue = ""; }
+  });
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "s") { e.preventDefault(); fileHandle ? writeFile() : (fsSupported ? linkFile() : downloadCopy()); }
+  });
+
+  // ---------- Themes ----------
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", state.theme);
+    const t = THEMES.find(t => t.id === state.theme) || THEMES[0];
+    $("themeName").textContent = t.name;
+    $("themes").innerHTML = THEMES.map(x =>
+      `<button class="swatch ${x.id === state.theme ? "active" : ""}" data-theme-id="${x.id}" title="${x.name}"
+        style="background:${x.bg};color:${x.fg}">Aa</button>`).join("");
+  }
+  $("themes").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-theme-id]"); if (!b) return;
+    state.theme = b.dataset.themeId; applyTheme(); changed();
+  });
+
+  // ---------- Render ----------
+  const current = () => state.sections.find(s => s.id === state.active) || state.sections[0];
+  const findItem = (id) => current().items.find(i => i.id === id);
+  const stamp = (t) => {
+    const d = new Date(t);
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short" }) + ", " +
+           d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  };
+
+  function renderSidebar() {
+    $("sectionList").innerHTML = state.sections.map(s => `
+      <li data-id="${s.id}" class="${s.id === state.active ? "active" : ""}">
+        <span class="name">${esc(s.name || "Untitled")}</span>
+        <span class="count">${s.items.length}</span>
+      </li>`).join("");
+  }
+
+  function renderStats() {
+    const sec = current();
+    const notes = sec.items.filter(i => i.type === "note").length;
+    const open = sec.items.filter(i => i.type === "todo").flatMap(i => i.todos).filter(t => !t.done).length;
+    $("sectionStats").textContent = `${notes} note${notes !== 1 ? "s" : ""} · ${open} open task${open !== 1 ? "s" : ""}`;
+  }
+
+  function renderCard(item) {
+    const head = (tag) => `
+      <div class="card-head">
+        <span class="tag">${tag}</span>
+        <input class="card-title" data-field="title" value="${esc(item.title)}" placeholder="Heading">
+        <div class="card-actions">
+          <button class="icon-btn" data-act="up" title="Move earlier">↑</button>
+          <button class="icon-btn" data-act="del" title="Delete">✕</button>
+        </div>
+      </div>`;
+    if (item.type === "note") {
+      return `<div class="card" data-id="${item.id}">${head("note")}
+        <textarea data-field="body" placeholder="Write something…">${esc(item.body)}</textarea>
+        <div class="card-foot"><span>edited ${stamp(item.updated)}</span></div></div>`;
+    }
+    const done = item.todos.filter(t => t.done).length;
+    const pct = item.todos.length ? Math.round(done / item.todos.length * 100) : 0;
+    return `<div class="card" data-id="${item.id}">${head("to-do")}
+      <div class="progress"><div style="width:${pct}%"></div></div>
+      <ul class="todos">
+        ${item.todos.map(t => `
+          <li data-tid="${t.id}" class="${t.done ? "done" : ""}">
+            <input type="checkbox" class="check" ${t.done ? "checked" : ""}>
+            <input class="text" value="${esc(t.text)}" placeholder="task">
+            <button class="icon-btn" data-act="deltodo" title="Remove">✕</button>
+          </li>`).join("")}
+      </ul>
+      <div class="add-todo"><span>+</span><input class="new-todo" placeholder="add a task, press Enter"></div>
+      <div class="card-foot"><span>edited ${stamp(item.updated)}</span><span>${done}/${item.todos.length} done</span></div>
+    </div>`;
+  }
+
+  function autosize(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }
+
+  function render() {
+    const sec = current();
+    state.active = sec.id;
+    renderSidebar();
+    $("sectionTitle").value = sec.name;
+    renderStats();
+
+    const q = $("search").value.trim().toLowerCase();
+    const items = sec.items.filter(i => !q ||
+      (i.title || "").toLowerCase().includes(q) ||
+      (i.body || "").toLowerCase().includes(q) ||
+      (i.todos || []).some(t => t.text.toLowerCase().includes(q)));
+
+    if (!sec.items.length) {
+      $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1"><p>This section is empty.</p>
+        <button class="btn" data-empty="note">+ Note</button>&nbsp; <button class="btn" data-empty="todo">+ To-do list</button></div>`;
+    } else if (!items.length) {
+      $("grid").innerHTML = `<div class="empty" style="grid-column:1/-1"><p>Nothing matches "${esc(q)}".</p></div>`;
+    } else {
+      $("grid").innerHTML = items.map(renderCard).join("");
+      $("grid").querySelectorAll("textarea").forEach(autosize);
+    }
+  }
+
+  // ---------- Actions ----------
+  function addItem(type) {
+    const item = type === "note"
+      ? { id: uid(), type, title: "", body: "", updated: Date.now() }
+      : { id: uid(), type, title: "", todos: [], updated: Date.now() };
+    current().items.unshift(item);
+    $("search").value = "";
+    changed(); render();
+    const el = $("grid").querySelector(`[data-id="${item.id}"] .card-title`);
+    el && el.focus();
+  }
+  function touch(item) { item.updated = Date.now(); changed(); }
+
+  $("sectionList").addEventListener("click", (e) => {
+    const li = e.target.closest("li"); if (!li) return;
+    state.active = li.dataset.id; $("search").value = "";
+    changed(); render(); $("sidebar").classList.remove("open");
+  });
+  $("addSectionForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = $("newSectionInput").value.trim(); if (!name) return;
+    const s = { id: uid(), name, items: [] };
+    state.sections.push(s); state.active = s.id; $("newSectionInput").value = "";
+    changed(); render();
+  });
+  $("sectionTitle").addEventListener("input", (e) => { current().name = e.target.value; changed(); renderSidebar(); });
+
+  let delArmed = false, delTimer;
+  $("deleteSectionBtn").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    if (!delArmed) {
+      delArmed = true; btn.textContent = "Click again to delete";
+      delTimer = setTimeout(() => { delArmed = false; btn.textContent = "Delete section"; }, 3000);
+      return;
+    }
+    clearTimeout(delTimer); delArmed = false; btn.textContent = "Delete section";
+    state.sections = state.sections.filter(s => s.id !== state.active);
+    if (!state.sections.length) state.sections.push({ id: uid(), name: "General", items: [] });
+    state.active = state.sections[0].id;
+    changed(); render();
+  });
+
+  $("addNoteBtn").onclick = () => addItem("note");
+  $("addTodoBtn").onclick = () => addItem("todo");
+  $("search").addEventListener("input", render);
+  $("menuBtn").onclick = () => $("sidebar").classList.toggle("open");
+
+  $("grid").addEventListener("input", (e) => {
+    const card = e.target.closest(".card"); if (!card) return;
+    const item = findItem(card.dataset.id); if (!item) return;
+    const f = e.target.dataset.field;
+    if (f === "title") item.title = e.target.value;
+    else if (f === "body") { item.body = e.target.value; autosize(e.target); }
+    else if (e.target.classList.contains("text")) {
+      const t = item.todos.find(t => t.id === e.target.closest("li").dataset.tid);
+      if (t) t.text = e.target.value;
+    } else return;
+    touch(item);
+  });
+
+  $("grid").addEventListener("change", (e) => {
+    if (!e.target.classList.contains("check")) return;
+    const item = findItem(e.target.closest(".card").dataset.id);
+    const t = item.todos.find(t => t.id === e.target.closest("li").dataset.tid);
+    t.done = e.target.checked; touch(item); render();
+  });
+
+  $("grid").addEventListener("keydown", (e) => {
+    const card = e.target.closest(".card"); if (!card) return;
+    const item = findItem(card.dataset.id);
+    if (e.target.classList.contains("new-todo") && e.key === "Enter") {
+      const text = e.target.value.trim(); if (!text) return;
+      item.todos.push({ id: uid(), text, done: false }); touch(item); render();
+      $("grid").querySelector(`[data-id="${item.id}"] .new-todo`).focus();
+    } else if (e.target.classList.contains("card-title") && e.key === "Enter") {
+      e.preventDefault();
+      const next = card.querySelector("textarea, .new-todo"); next && next.focus();
+    } else if (e.target.classList.contains("text") && e.key === "Enter") {
+      card.querySelector(".new-todo").focus();
+    }
+  });
+
+  const armed = new Set();
+  $("grid").addEventListener("click", (e) => {
+    const emptyBtn = e.target.closest("[data-empty]");
+    if (emptyBtn) return addItem(emptyBtn.dataset.empty);
+    const btn = e.target.closest("[data-act]"); if (!btn) return;
+    const sec = current();
+    const item = findItem(btn.closest(".card").dataset.id);
+    const act = btn.dataset.act;
+
+    if (act === "del") {
+      const hasContent = item.title || item.body || (item.todos && item.todos.length);
+      if (hasContent && !armed.has(item.id)) {
+        armed.add(item.id); btn.classList.add("confirm"); btn.textContent = "delete?";
+        setTimeout(() => { armed.delete(item.id); if (btn.isConnected) { btn.classList.remove("confirm"); btn.textContent = "✕"; } }, 3000);
+        return;
+      }
+      sec.items = sec.items.filter(i => i.id !== item.id);
+      changed(); render();
+    } else if (act === "up") {
+      const i = sec.items.indexOf(item);
+      if (i > 0) { [sec.items[i - 1], sec.items[i]] = [sec.items[i], sec.items[i - 1]]; changed(); render(); }
+    } else if (act === "deltodo") {
+      item.todos = item.todos.filter(t => t.id !== btn.closest("li").dataset.tid);
+      touch(item); render();
+    }
+  });
+
+  // ---------- Start ----------
+  applyTheme();
+  render();
+  restoreLink().then(updateBanner);
+})();
+</script>
+</body>
+</html>
